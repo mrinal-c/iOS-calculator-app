@@ -20,10 +20,9 @@ class MainController: UIViewController {
         return cv
     }()
     
-    var firstNum: Int = 0
-    var secondNum: Int = 0
+    var firstNum: Double = 0
+    var secondNum: Double = 0
     var operation: String = ""
-    var isDisplayingAnswer: Bool = false
     
     private let answerLabel: UILabel = {
        let label = UILabel()
@@ -82,7 +81,8 @@ class MainController: UIViewController {
     }
     
     func constrainCollectionView() {
-        collectionView.anchor(bottom: view.safeAreaLayoutGuide.bottomAnchor, paddingBottom: 20)
+        collectionView.anchor(bottom: view.safeAreaLayoutGuide.bottomAnchor,
+                              paddingBottom: 20)
         collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20).isActive = true
         collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20).isActive = true
         collectionView.heightAnchor.constraint(equalToConstant: view.safeAreaLayoutGuide.layoutFrame.height * 0.55).isActive = true
@@ -103,31 +103,33 @@ class MainController: UIViewController {
         secondNum = 0
         answerLabel.text = "\(0)"
         operation = ""
-        isDisplayingAnswer = false
     }
     
-    func updateLabel(withInt num: Int) {
-        answerLabel.text = "\(num)"
-    }
-    
-    func updateNumber(withInt num: Int) {
-        if (isDisplayingAnswer) {
-            firstNum = 0
-            secondNum = 0
-            operation = ""
+    func updateLabel(withNum num: Double) {
+        let answer = round(num: num)
+        if (floor(answer) == ceil(answer)) {
+            let int = Int(answer)
+            answerLabel.text = "\(int)"
+        } else {
+            answerLabel.text = "\(answer)"
         }
+    }
+    
+    func updateNumber(withNum num: Double) {
         if (operation == "") {
             firstNum = firstNum * 10 + num
-            updateLabel(withInt: firstNum)
+            updateLabel(withNum: firstNum)
         } else {
             secondNum = secondNum * 10 + num
-            updateLabel(withInt: secondNum)
+            updateLabel(withNum: secondNum)
+            let row = Utilities().getButtonIndex(buttonString: operation)
+            let cell = collectionView.cellForItem(at: IndexPath(row: row, section: 0)) as! CalcButton
+            cell.toggleOff()
         }
-        isDisplayingAnswer = false
     }
     
     func calculate() {
-        let answer: Int
+        let answer: Double
         switch (operation) {
         case "+":
             answer = firstNum + secondNum
@@ -138,9 +140,10 @@ class MainController: UIViewController {
         default:
             answer = firstNum * secondNum
         }
-        updateLabel(withInt: answer)
-        isDisplayingAnswer = true
+        updateLabel(withNum: answer)
         firstNum = answer
+        secondNum = 0
+        operation = ""
     }
     
     func debugger() {
@@ -150,6 +153,33 @@ class MainController: UIViewController {
         print("")
     }
     
+    func round(num: Double) -> Double {
+        var rounded: Double = (1000000 * num)
+        rounded.round()
+        rounded = rounded / 1000000
+        return rounded
+    }
+    
+    func toggleOperation(toggleCell cell: CalcButton) {
+        if cell.isToggled {
+            cell.toggleOff()
+        } else {
+            cell.toggleOn()
+        }
+        let divideCell = collectionView.cellForItem(at: IndexPath(row: 3, section: 0)) as! CalcButton
+        let timesCell = collectionView.cellForItem(at: IndexPath(row: 7, section: 0)) as! CalcButton
+        let minusCell = collectionView.cellForItem(at: IndexPath(row: 11, section: 0)) as! CalcButton
+        let plusCell = collectionView.cellForItem(at: IndexPath(row: 15, section: 0)) as! CalcButton
+        let operationButtons = [divideCell, timesCell, minusCell, plusCell]
+        for button in operationButtons {
+            if button.isToggled && button != cell {
+                button.toggleOff()
+            }
+        }
+        
+    }
+    
+
     //MARK: - Selectors
 }
 
@@ -184,8 +214,9 @@ extension MainController: UICollectionViewDataSource {
     
 }
 
+//MARK: - CalcButtonDelegate
 extension MainController: CalcButtonDelegate {
-    func handleButtonTap(index: Int) {
+    func handleButtonTap(index: Int, _ cell: CalcButton) {
         let type = Utilities().getButtonType(index: index)
         let value = buttons[index]
         
@@ -194,15 +225,17 @@ extension MainController: CalcButtonDelegate {
             if (value == ".") {
                 
             } else {
-                guard let num = Int(buttons[index]) else { return }
-                self.updateNumber(withInt: num)
+                guard let temp = Int(buttons[index]) else { return }
+                let num = Double(temp)
+                self.updateNumber(withNum: num)
             }
         } else if (type == "other") {
             if (value == "AC") {
                 self.clear()
             }
         } else if (type == "operation") {
-            self.operation = value
+            self.operation = value == self.operation ? "" : value
+            self.toggleOperation(toggleCell: cell)
         } else {
             self.calculate()
         }

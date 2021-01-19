@@ -26,21 +26,32 @@ class Utilities {
     
     func getNormalColor(idx: Int) -> UIColor {
         if (idx >= 0 && idx <= 2) {
-            return calcGrey
+            return .calcGrey
         } else if (idx == 3 || idx == 7 || idx == 11 || idx == 15 || idx == 18) {
-            return calcOrange
+            return .calcOrange
         } else {
-            return calcBlack
+            return .calcBlack
         }
     }
     
     func getPushColor(idx: Int) -> UIColor {
         if (idx >= 0 && idx <= 2) {
-            return calcGreyLight
+            return .calcGreyLight
         } else if (idx == 3 || idx == 7 || idx == 11 || idx == 15 || idx == 18) {
-            return calcOrangeLight
+            return .calcOrangeLight
         } else {
-            return calcBlackLight
+            return .calcBlackLight
         }
+    }
+    
+    func getButtonIndex(buttonString: String) -> Int {
+        var counter = 0
+        for element in buttons {
+            if (element == buttonString) {
+                break
+            }
+            counter += 1
+        }
+        return counter
     }
 }
